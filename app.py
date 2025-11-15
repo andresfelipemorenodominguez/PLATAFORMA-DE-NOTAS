@@ -1,70 +1,133 @@
+import psycopg2
+import os
 from flask import Flask, render_template, request, redirect, session, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "clave_secreta"
-# Almacenamiento en memoria de usuarios registrados (temporal, reinicia al reiniciar app)
-users = {}
+app.secret_key = os.getenv("SECRET_KEY", "clave_insegura")
+
+# Función para obtener conexión a PostgreSQL
+def get_db_connection():
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        database=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD")
+    )
+    return conn
 
 
+# -------------------------------------------
+# RUTA DE REGISTRO
+# -------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def registro():
     if request.method == "POST":
         nombre = request.form.get("nombre")
         correo = request.form.get("correo")
-        contrasenia = request.form.get("contraseña")
-        contrasenia2 = request.form.get("contraseña2")
+        contraseña = request.form.get("contraseña")
+        contraseña2 = request.form.get("contraseña2")
 
-        # Validaciones básicas
-        if not (nombre and correo and contrasenia and contrasenia2):
-            flash("Por favor completa todos los campos")
+        # Validaciones
+        if not (nombre and correo and contraseña and contraseña2):
+            flash("Completa todos los campos")
             return redirect("/")
 
-        if contrasenia != contrasenia2:
+        if contraseña != contraseña2:
             flash("Las contraseñas no coinciden")
             return redirect("/")
 
-        if correo in users:
-            flash("El correo ya está registrado. Inicia sesión o usa otro correo.")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar si el correo ya existe
+        cursor.execute("SELECT * FROM usuarios WHERE correo = %s", (correo,))
+        existente = cursor.fetchone()
+
+        if existente:
+            flash("Este correo ya está registrado.")
+            cursor.close()
+            conn.close()
             return redirect("/iniciosesion")
 
-        # Guardar usuario en memoria y redirigir al inicio de sesión
-        users[correo] = {"nombre": nombre, "contraseña": contrasenia}
-        flash("Registro exitoso. Por favor inicia sesión.")
+        # Encriptar contraseña
+        hash_pw = generate_password_hash(contraseña)
+
+        # Insertar usuario nuevo
+        cursor.execute(
+            "INSERT INTO usuarios (nombre, correo, contraseña) VALUES (%s, %s, %s)",
+            (nombre, correo, hash_pw)
+        )
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        flash("Registro exitoso. Inicia sesión.")
         return redirect("/iniciosesion")
 
     return render_template("registro.html")
 
 
+# -------------------------------------------
+# RUTA DE INICIO DE SESIÓN
+# -------------------------------------------
 @app.route("/iniciosesion", methods=["GET", "POST"])
 def iniciosesion():
     if request.method == "POST":
         correo = request.form.get("correo")
-        contrasenia = request.form.get("contraseña")
+        contraseña = request.form.get("contraseña")
 
-        user = users.get(correo)
-        if user and user.get("contraseña") == contrasenia:
-            session["usuario"] = correo
-            flash("Inicio de sesión exitoso")
-            return redirect("/inicio")
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-        flash("Correo o contraseña incorrectos")
-        return redirect("/iniciosesion")
+        cursor.execute("SELECT contraseña FROM usuarios WHERE correo = %s", (correo,))
+        user = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if not user:
+            flash("Correo incorrecto")
+            return redirect("/iniciosesion")
+
+        hashed_pw = user[0]
+
+        if not check_password_hash(hashed_pw, contraseña):
+            flash("Contraseña incorrecta")
+            return redirect("/iniciosesion")
+
+        # Guardar sesión
+        session["usuario"] = correo
+        return redirect("/inicio")
 
     return render_template("iniciosesion.html")
 
 
+# -------------------------------------------
+# RUTA PÁGINA PRINCIPAL
+# -------------------------------------------
 @app.route("/inicio")
 def inicio():
-    usuario = session.get("usuario")
-    return render_template("inicio.html", usuario=usuario)
+    if "usuario" not in session:
+        return redirect("/iniciosesion")
+
+    return render_template("inicio.html", usuario=session["usuario"])
 
 
+# -------------------------------------------
+# CERRAR SESIÓN
+# -------------------------------------------
 @app.route("/logout")
 def logout():
-    session.pop("usuario", None)
-    flash("Sesión cerrada")
+    session.clear()
     return redirect("/iniciosesion")
 
 
 if __name__ == "__main__":
     app.run(debug=True)
+
