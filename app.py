@@ -27,14 +27,19 @@ def get_db_connection():
 @app.route("/", methods=["GET", "POST"])
 def registro():
     if request.method == "POST":
-        nombre = request.form.get("nombre")
+        primer_nombre = request.form.get("primer_nombre")
+        segundo_nombre = request.form.get("segundo_nombre")
+        primer_apellido = request.form.get("primer_apellido")
+        segundo_apellido = request.form.get("segundo_apellido")
         correo = request.form.get("correo")
         contraseña = request.form.get("contraseña")
         contraseña2 = request.form.get("contraseña2")
+        fecha_nacimiento = request.form.get("fecha_nacimiento")
+        rol = request.form.get("rol")
 
         # Validaciones
-        if not (nombre and correo and contraseña and contraseña2):
-            flash("Completa todos los campos")
+        if not (primer_nombre and primer_apellido and correo and contraseña and contraseña2 and fecha_nacimiento and rol):
+            flash("Completa todos los campos obligatorios")
             return redirect("/")
 
         if contraseña != contraseña2:
@@ -59,8 +64,14 @@ def registro():
 
         # Insertar usuario nuevo
         cursor.execute(
-            "INSERT INTO usuarios (nombre, correo, contraseña) VALUES (%s, %s, %s)",
-            (nombre, correo, hash_pw)
+            """
+            INSERT INTO usuarios (
+                primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
+                correo, contraseña, fecha_nacimiento, rol
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
+            correo, hash_pw, fecha_nacimiento, rol)
         )
         conn.commit()
 
