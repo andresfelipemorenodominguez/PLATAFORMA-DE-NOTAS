@@ -30,10 +30,14 @@ def get_db_connection():
 @app.route("/", methods=["GET", "POST"])
 def registro():
     if request.method == "POST":
+
+        # Obtener datos del formulario
         primer_nombre = request.form.get("primer_nombre")
         segundo_nombre = request.form.get("segundo_nombre")
         primer_apellido = request.form.get("primer_apellido")
         segundo_apellido = request.form.get("segundo_apellido")
+        tipo_documento = request.form.get("tipo_documento")
+        numero_documento = request.form.get("numero_documento")
         correo = request.form.get("correo")
         contraseña = request.form.get("contraseña")
         contraseña2 = request.form.get("contraseña2")
@@ -41,7 +45,7 @@ def registro():
         rol = request.form.get("rol")
 
         # Validaciones
-        if not (primer_nombre and primer_apellido and correo and contraseña and contraseña2 and fecha_nacimiento and rol):
+        if not (primer_nombre and primer_apellido and correo and contraseña and contraseña2 and fecha_nacimiento and rol and tipo_documento and numero_documento):
             flash("Completa todos los campos obligatorios")
             return redirect("/")
 
@@ -62,6 +66,16 @@ def registro():
             conn.close()
             return redirect("/iniciosesion")
 
+        # Verificar si el número de documento ya existe
+        cursor.execute("SELECT * FROM usuarios WHERE numero_documento = %s", (numero_documento,))
+        documento_existente = cursor.fetchone()
+
+        if documento_existente:
+            flash("El número de documento ya está registrado.")
+            cursor.close()
+            conn.close()
+            return redirect("/")
+
         # Encriptar contraseña
         hash_pw = generate_password_hash(contraseña)
 
@@ -70,11 +84,15 @@ def registro():
             """
             INSERT INTO usuarios (
                 primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
-                correo, contraseña, fecha_nacimiento, rol
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                tipo_documento, numero_documento, correo, contraseña,
+                fecha_nacimiento, rol
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            (primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
-            correo, hash_pw, fecha_nacimiento, rol)
+            (
+                primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
+                tipo_documento, numero_documento, correo, hash_pw,
+                fecha_nacimiento, rol
+            )
         )
         conn.commit()
 
@@ -120,7 +138,7 @@ def iniciosesion():
         session["usuario"] = correo
         session["rol"] = rol
 
-        # 🚀 Redirección inmediata según el rol
+        # Redirección según el rol
         if rol == "Estudiante":
             return redirect("/estudiante")
         elif rol == "Profesor":

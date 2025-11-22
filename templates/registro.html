@@ -11,7 +11,7 @@
         <h1>Registro de Usuario</h1>
 
         <form action="/" method="POST">
-            
+
             <label for="primer_nombre">Primer Nombre:</label>
             <input type="text" id="primer_nombre" name="primer_nombre" required>
 
@@ -23,6 +23,19 @@
 
             <label for="segundo_apellido">Segundo Apellido:</label>
             <input type="text" id="segundo_apellido" name="segundo_apellido">
+
+            <!-- Campo: Tipo de Documento -->
+            <label for="tipo_documento">Tipo de Documento:</label>
+            <select id="tipo_documento" name="tipo_documento" required>
+                <option value="" disabled selected>Selecciona un tipo de documento</option>
+                <option value="Tarjeta de Identidad">Tarjeta de Identidad</option>
+                <option value="Cédula de Ciudadanía">Cédula de Ciudadanía</option>
+                <option value="Cédula de Extranjería">Cédula de Extranjería</option>
+            </select>
+
+            <!-- Campo: Número de Documento -->
+            <label for="numero_documento">Número de Documento:</label>
+            <input type="text" id="numero_documento" name="numero_documento" required>
 
             <label for="correo">Correo Electrónico:</label>
             <input type="email" id="correo" name="correo" required>
@@ -52,4 +65,5 @@
 
 </body>
 </html>
+
 
