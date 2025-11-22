@@ -1,0 +1,30 @@
+/* Barra superior */
+.top-bar {
+    background-color: #8b8b8b;
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
+    box-sizing: border-box;
+}
+
+/* Contenedor del logo */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Imagen del logo */
+.logo {
+    height: 45px;
+}
+
+/* Texto MiBoletín */
+.brand {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #0f3b59;
+}

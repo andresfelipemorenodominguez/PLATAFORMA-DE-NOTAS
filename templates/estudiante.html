@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal del Estudiante</title>
+    <title>MiBoletín</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estudiante.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Bienvenido, Estudiante</h1>
+    <header class="top-bar">
+        <div class="logo-container">
+            <img src="imagenes/logo.png" alt="Logo MiBoletín" class="logo">
+            <span class="brand">MiBoletín</span>
+        </div>
+    </header>
 
-        <p>Has iniciado sesión correctamente como <strong>Estudiante</strong>.</p>
-
-        <a class="logout" href="/logout">Cerrar Sesión</a>
-    </div>
+    <main>
+        <!-- Espacio en blanco como en el diseño -->
+    </main>
 </body>
 </html>
