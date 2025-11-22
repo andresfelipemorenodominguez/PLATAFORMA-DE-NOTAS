@@ -9,7 +9,10 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "clave_insegura")
 
-# Función para obtener conexión a PostgreSQL
+
+# -------------------------------------------
+# FUNCIÓN PARA OBTENER CONEXIÓN A POSTGRESQL
+# -------------------------------------------
 def get_db_connection():
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -96,7 +99,7 @@ def iniciosesion():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT contraseña FROM usuarios WHERE correo = %s", (correo,))
+        cursor.execute("SELECT contraseña, rol FROM usuarios WHERE correo = %s", (correo,))
         user = cursor.fetchone()
 
         cursor.close()
@@ -107,6 +110,7 @@ def iniciosesion():
             return redirect("/iniciosesion")
 
         hashed_pw = user[0]
+        rol = user[1]
 
         if not check_password_hash(hashed_pw, contraseña):
             flash("Contraseña incorrecta")
@@ -114,20 +118,41 @@ def iniciosesion():
 
         # Guardar sesión
         session["usuario"] = correo
-        return redirect("/inicio")
+        session["rol"] = rol
+
+        # 🚀 Redirección inmediata según el rol
+        if rol == "Estudiante":
+            return redirect("/estudiante")
+        elif rol == "Profesor":
+            return redirect("/profesor")
+        elif rol == "Administrador":
+            return redirect("/admin")
 
     return render_template("iniciosesion.html")
 
 
 # -------------------------------------------
-# RUTA PÁGINA PRINCIPAL
+# RUTAS PARA CADA ROL
 # -------------------------------------------
-@app.route("/inicio")
-def inicio():
-    if "usuario" not in session:
+@app.route("/estudiante")
+def estudiante():
+    if "usuario" not in session or session.get("rol") != "Estudiante":
         return redirect("/iniciosesion")
+    return render_template("estudiante.html")
 
-    return render_template("inicio.html", usuario=session["usuario"])
+
+@app.route("/profesor")
+def profesor():
+    if "usuario" not in session or session.get("rol") != "Profesor":
+        return redirect("/iniciosesion")
+    return render_template("profesor.html")
+
+
+@app.route("/admin")
+def admin():
+    if "usuario" not in session or session.get("rol") != "Administrador":
+        return redirect("/iniciosesion")
+    return render_template("admin.html")
 
 
 # -------------------------------------------
@@ -139,6 +164,8 @@ def logout():
     return redirect("/iniciosesion")
 
 
+# -------------------------------------------
+# EJECUCIÓN
+# -------------------------------------------
 if __name__ == "__main__":
     app.run(debug=True)
-
