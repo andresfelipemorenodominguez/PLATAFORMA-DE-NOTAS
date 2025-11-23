@@ -49,6 +49,12 @@ def registro():
             flash("Completa todos los campos obligatorios")
             return redirect("/")
 
+        # Validación: Tarjeta de Identidad no puede ser Profesor ni Administrador
+        if tipo_documento == "Tarjeta de Identidad" and rol in ["Profesor", "Administrador"]:
+            flash("No puedes registrarte como Profesor o Administrador usando Tarjeta de Identidad.")
+            return redirect("/")
+
+
         if contraseña != contraseña2:
             flash("Las contraseñas no coinciden")
             return redirect("/")
